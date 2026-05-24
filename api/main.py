@@ -1,9 +1,11 @@
 """FastAPI 后端服务 - AI Agent Workflow Platform"""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -52,13 +54,10 @@ class ChatRequest(BaseModel):
 
 # --- Routes ---
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {
-        "name": "AI Agent Workflow Platform",
-        "version": "1.0.0",
-        "status": "running",
-    }
+    html_path = Path("static/index.html")
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
 
 
 @app.get("/api/models")
