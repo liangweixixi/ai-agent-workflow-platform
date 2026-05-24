@@ -3,98 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Agent Workflow Platform</title>
+    <title>AI Agent Workflow Platform - 在线演示</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
-        h1 { text-align: center; margin-bottom: 0.5rem; font-size: 2rem; color: #38bdf8; }
-        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 2rem; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #94a3b8; }
-        select, textarea { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1rem; }
-        textarea { height: 120px; resize: vertical; }
-        button { width: 100%; padding: 0.85rem; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
-        button:hover { background: #1d4ed8; }
-        button:disabled { background: #475569; cursor: not-allowed; }
-        #result { white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; line-height: 1.6; }
-        .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .status-success { background: #166534; color: #4ade80; }
-        .status-partial { background: #854d0e; color: #facc15; }
-        .status-failed { background: #991b1b; color: #f87171; }
+        :root {
+            --bg: #0a0e1a; --surface: #111827; --surface2: #1e293b;
+            --border: #1e3a5f; --blue: #3b82f6; --cyan: #06b6d4;
+            --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+            --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Header */
+        .header { text-align: center; padding: 2.5rem 1rem 1.5rem; position: relative; }
+        .header::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80%; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+        .header h1 { font-size: 2.2rem; background: linear-gradient(135deg, var(--cyan), var(--blue), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.4rem; }
+        .header p { color: var(--muted); font-size: 1rem; }
+
+        /* Layout */
+        .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .main { grid-template-columns: 1fr; } }
+
+        /* Cards */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+        .card-title { font-size: 0.85rem; font-weight: 600; color: var(--cyan); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+        /* Model select */
+        select { width: 100%; padding: 0.7rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; cursor: pointer; outline: none; transition: border-color 0.2s; }
+        select:focus { border-color: var(--blue); }
+
+        /* Textarea */
+        textarea { width: 100%; height: 110px; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: inherit; transition: border-color 0.2s; }
+        textarea:focus { border-color: var(--blue); }
+
+        /* Buttons */
+        .btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--blue), #6366f1); color: #fff; width: 100%; margin-top: 1rem; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .example-btn { padding: 0.5rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 0.82rem; cursor: pointer; transition: all 0.15s; }
+        .example-btn:hover { border-color: var(--blue); color: var(--text); }
+
+        /* Flow visualization */
+        .flow { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; padding: 1rem 0; }
+        .flow-node { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface2); color: var(--dim); transition: all 0.5s; }
+        .flow-node.active { border-color: var(--cyan); color: var(--cyan); background: rgba(6,182,212,0.1); box-shadow: 0 0 15px rgba(6,182,212,0.15); animation: pulse 1.5s infinite; }
+        .flow-node.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.1); }
+        .flow-arrow { color: var(--dim); font-size: 1.2rem; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+        /* Result area */
+        .result-area { grid-column: 1 / -1; }
+        .result-content { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.88rem; line-height: 1.7; color: var(--muted); white-space: pre-wrap; max-height: 500px; overflow-y: auto; padding: 1rem; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+        .result-content::-webkit-scrollbar { width: 6px; }
+        .result-content::-webkit-scrollbar-track { background: transparent; }
+        .result-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Status badges */
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; }
+        .badge-success { background: rgba(16,185,129,0.15); color: var(--green); }
+        .badge-partial { background: rgba(245,158,11,0.15); color: var(--yellow); }
+        .badge-failed { background: rgba(239,68,68,0.15); color: var(--red); }
+        .badge-running { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+        /* Stats */
+        .stats { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+        .stat { text-align: center; }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--cyan); }
+        .stat-label { font-size: 0.75rem; color: var(--dim); }
+
+        /* Footer */
+        .footer { text-align: center; padding: 2rem 1rem; color: var(--dim); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+        .footer a { color: var(--blue); text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>AI Agent Workflow Platform</h1>
-        <p class="subtitle">多模型多 Agent 协同工作流 | Planner / Executor / Reviewer</p>
 
-        <div class="card">
-            <label for="model">选择模型</label>
-            <select id="model">
-                <option value="mimo-v2.5-pro">MiMo V2.5 Pro</option>
-                <option value="mimo-v2.5">MiMo V2.5</option>
-                <option value="deepseek-chat">DeepSeek Chat</option>
-                <option value="deepseek-reasoner">DeepSeek Reasoner</option>
-                <option value="gpt-4o">GPT-4o</option>
-            </select>
-        </div>
+<div class="header">
+    <h1>AI Agent Workflow Platform</h1>
+    <p>多模型多 Agent 协同工作流 | Planner / Executor / Reviewer</p>
+</div>
 
-        <div class="card">
-            <label for="task">输入任务</label>
-            <textarea id="task" placeholder="描述你想要 AI Agent 完成的任务..."></textarea>
-            <button id="runBtn" onclick="runWorkflow()">执行工作流</button>
-        </div>
+<div class="main">
+    <!-- Left: Input -->
+    <div class="card">
+        <div class="card-title">&#9889; 任务配置</div>
 
-        <div class="card" id="resultCard" style="display:none;">
-            <label>执行结果</label>
-            <div id="result"></div>
+        <label style="font-size:0.85rem;color:var(--muted);margin-bottom:0.4rem;display:block;">选择模型</label>
+        <select id="model">
+            <option value="mimo-v2.5-pro">Xiaomi MiMo V2.5 Pro</option>
+            <option value="mimo-v2.5">Xiaomi MiMo V2.5</option>
+            <option value="deepseek-chat">DeepSeek Chat</option>
+            <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+            <option value="gpt-4o">GPT-4o</option>
+        </select>
+
+        <label style="font-size:0.85rem;color:var(--muted);margin:1rem 0 0.4rem;display:block;">输入任务</label>
+        <textarea id="task" placeholder="描述你想要 AI Agent 完成的复杂任务...&#10;&#10;例如：帮我分析这段代码的性能瓶颈并给出优化方案"></textarea>
+
+        <button class="btn btn-primary" id="runBtn" onclick="runWorkflow()">
+            启动工作流
+        </button>
+
+        <div style="margin-top:1rem;">
+            <label style="font-size:0.8rem;color:var(--dim);margin-bottom:0.5rem;display:block;">快速示例：</label>
+            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+                <button class="example-btn" onclick="fillExample(0)">代码优化</button>
+                <button class="example-btn" onclick="fillExample(1)">技术方案</button>
+                <button class="example-btn" onclick="fillExample(2)">数据分析</button>
+                <button class="example-btn" onclick="fillExample(3)">产品设计</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        async function runWorkflow() {
-            const btn = document.getElementById('runBtn');
-            const task = document.getElementById('task').value.trim();
-            if (!task) { alert('请输入任务'); return; }
+    <!-- Right: Flow -->
+    <div class="card">
+        <div class="card-title">&#128640; Agent 执行流</div>
 
-            btn.disabled = true;
-            btn.textContent = 'Agent 执行中...';
-            document.getElementById('resultCard').style.display = 'block';
-            document.getElementById('result').textContent = 'Planner 正在分析任务...';
+        <div class="flow">
+            <div class="flow-node" id="node-planner">Planner</div>
+            <span class="flow-arrow">&#10132;</span>
+            <div class="flow-node" id="node-executor">Executor</div>
+            <span class="flow-arrow">&#10132;</span>
+            <div class="flow-node" id="node-reviewer">Reviewer</div>
+        </div>
 
-            try {
-                const resp = await fetch('/api/workflow', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        task: task,
-                        model: document.getElementById('model').value,
-                    }),
-                });
-                const data = await resp.json();
-                renderResult(data);
-            } catch (e) {
-                document.getElementById('result').textContent = '请求失败: ' + e.message;
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '执行工作流';
-            }
+        <div id="flowStatus" style="text-align:center;color:var(--dim);font-size:0.9rem;min-height:2rem;">
+            等待任务输入...
+        </div>
+
+        <div class="stats" id="stats" style="display:none;">
+            <div class="stat">
+                <div class="stat-val" id="stat-tasks">0</div>
+                <div class="stat-label">子任务数</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-completed">0</div>
+                <div class="stat-label">已完成</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-tokens">0</div>
+                <div class="stat-label">Token 消耗</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-retries">0</div>
+                <div class="stat-label">重试次数</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: Result -->
+    <div class="card result-area">
+        <div class="card-title">&#128203; 执行结果</div>
+        <div class="result-content" id="result">欢迎使用 AI Agent Workflow Platform 在线演示。
+
+本平台采用 Planner / Executor / Reviewer 三 Agent 协同架构：
+
+  1. Planner 分析需求并分解为可执行子任务
+  2. Executor 逐个执行子任务，自动选择最优模型
+  3. Reviewer 对结果进行质量审查，不达标则自动重试
+
+选择一个模型，输入任务描述，点击"启动工作流"开始体验。</div>
+    </div>
+</div>
+
+<div class="footer">
+    AI Agent Workflow Platform &copy; 2026 |
+    <a href="https://github.com/liangweixixi/ai-agent-workflow-platform" target="_blank">GitHub</a> |
+    Powered by MiMo + FastAPI
+</div>
+
+<script>
+const EXAMPLES = [
+    "帮我分析 Python 异步编程中常见的性能瓶颈，给出至少 3 个优化建议，并提供代码示例",
+    "设计一个支持千万级用户的即时通讯系统技术方案，要求包含架构设计、存储选型、消息推送方案",
+    "分析以下数据集的用户行为特征：日活 50 万，留存率从第 1 天的 60% 降到第 7 天的 15%，找出关键流失节点并提出提升方案",
+    "设计一个 AI 驱动的智能客服产品方案，要求覆盖多轮对话、意图识别、工单流转三个核心场景"
+];
+
+function fillExample(i) {
+    document.getElementById('task').value = EXAMPLES[i];
+    document.getElementById('task').focus();
+}
+
+function resetFlow() {
+    ['planner','executor','reviewer'].forEach(n => {
+        const el = document.getElementById('node-'+n);
+        el.className = 'flow-node';
+    });
+}
+
+function setNode(name, state) {
+    const el = document.getElementById('node-'+name);
+    el.className = 'flow-node ' + state;
+}
+
+function updateStats(data) {
+    const s = document.getElementById('stats');
+    s.style.display = 'flex';
+    const completed = data.tasks ? data.tasks.filter(t=>t.status==='success').length : 0;
+    const retries = data.tasks ? data.tasks.filter(t=>t.review && t.review.verdict!=='approve').length : 0;
+    document.getElementById('stat-tasks').textContent = data.tasks ? data.tasks.length : 0;
+    document.getElementById('stat-completed').textContent = completed;
+    document.getElementById('stat-tokens').textContent = data.total_tokens || 0;
+    document.getElementById('stat-retries').textContent = retries;
+}
+
+async function runWorkflow() {
+    const btn = document.getElementById('runBtn');
+    const task = document.getElementById('task').value.trim();
+    const model = document.getElementById('model').value;
+    if (!task) { document.getElementById('task').focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Agent 执行中...';
+    resetFlow();
+
+    const resultEl = document.getElementById('result');
+    const statusEl = document.getElementById('flowStatus');
+
+    // Simulate flow animation
+    setNode('planner', 'active');
+    statusEl.innerHTML = '<span class="badge badge-running">Planning</span> Planner Agent 正在分析需求并分解任务...';
+    resultEl.textContent = '>>> Planner Agent 启动\n>>> 分析任务需求...\n';
+
+    try {
+        const resp = await fetch('/api/workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ task, model, max_retries: 2 })
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(()=>({detail:'请求失败'}));
+            throw new Error(err.detail || `HTTP ${resp.status}`);
         }
 
-        function renderResult(data) {
-            let html = `<p>目标: ${data.goal}</p>`;
-            html += `<p>状态: <span class="status status-${data.status}">${data.status}</span> | 总 Token: ${data.total_tokens}</p>`;
-            html += `<p>${data.summary}</p><hr style="border-color:#334155;margin:1rem 0">`;
+        const data = await resp.json();
+
+        // Animate flow
+        setNode('planner', 'done');
+        setNode('executor', 'active');
+        statusEl.innerHTML = '<span class="badge badge-running">Executing</span> Executor Agent 正在执行子任务...';
+        resultEl.textContent += '\n>>> Planner 完成，共分解 ' + (data.tasks?.length||0) + ' 个子任务\n';
+
+        await new Promise(r => setTimeout(r, 600));
+
+        if (data.tasks) {
             for (const t of data.tasks) {
-                html += `<p><strong>${t.task_id}</strong> <span class="status status-${t.status}">${t.status}</span></p>`;
-                html += `<p style="margin-left:1rem;color:#cbd5e1">${t.result}</p>`;
-                if (t.review) {
-                    html += `<p style="margin-left:1rem;color:#94a3b8">审查: ${t.review.verdict} (${t.review.score}/100) - ${t.review.feedback || ''}</p>`;
-                }
+                resultEl.textContent += `\n>>> [${t.task_id}] 执行完成 — ${t.status}`;
             }
-            document.getElementById('result').innerHTML = html;
         }
-    </script>
+
+        setNode('executor', 'done');
+        setNode('reviewer', 'active');
+        statusEl.innerHTML = '<span class="badge badge-running">Reviewing</span> Reviewer Agent 正在审查结果...';
+        await new Promise(r => setTimeout(r, 500));
+
+        setNode('reviewer', 'done');
+        statusEl.innerHTML = '<span class="badge badge-success">完成</span> 工作流执行完毕';
+
+        // Render result
+        let html = `工作流执行完毕\n${'─'.repeat(50)}\n\n`;
+        html += `任务目标: ${data.goal}\n`;
+        html += `执行状态: ${data.status === 'completed' ? '全部完成' : data.status === 'partial' ? '部分完成' : data.status}\n`;
+        html += `总 Token: ${data.total_tokens}\n`;
+        html += `摘要: ${data.summary}\n`;
+        html += `${'─'.repeat(50)}\n\n`;
+
+        if (data.tasks) {
+            for (const t of data.tasks) {
+                const icon = t.status === 'success' ? '[OK]' : t.status === 'failed' ? '[FAIL]' : '[PARTIAL]';
+                html += `${icon} ${t.task_id}\n`;
+                html += `    结果: ${t.result}\n`;
+                if (t.review) {
+                    html += `    审查: ${t.review.verdict} (${t.review.score}/100) — ${t.review.feedback || ''}\n`;
+                    if (t.review.suggestions && t.review.suggestions.length) {
+                        html += `    建议: ${t.review.suggestions.join('; ')}\n`;
+                    }
+                }
+                html += '\n';
+            }
+        }
+
+        resultEl.textContent = html;
+        updateStats(data);
+
+    } catch (e) {
+        setNode('planner', '');
+        statusEl.innerHTML = '<span class="badge badge-failed">Error</span> 执行失败';
+        resultEl.textContent = `执行出错: ${e.message}\n\n可能原因:\n- API Key 未配置（请在 .env 文件中设置对应的 API Key）\n- 模型服务不可用\n- 网络连接问题\n\n请检查后重试。`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '启动工作流';
+    }
+}
+</script>
 </body>
 </html>
