@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Workflow Platform</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        h1 { text-align: center; margin-bottom: 0.5rem; font-size: 2rem; color: #38bdf8; }
+        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 2rem; }
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #94a3b8; }
+        select, textarea { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1rem; }
+        textarea { height: 120px; resize: vertical; }
+        button { width: 100%; padding: 0.85rem; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #475569; cursor: not-allowed; }
+        #result { white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; line-height: 1.6; }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .status-success { background: #166534; color: #4ade80; }
+        .status-partial { background: #854d0e; color: #facc15; }
+        .status-failed { background: #991b1b; color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Agent Workflow Platform</h1>
+        <p class="subtitle">多模型多 Agent 协同工作流 | Planner / Executor / Reviewer</p>
+
+        <div class="card">
+            <label for="model">选择模型</label>
+            <select id="model">
+                <option value="mimo-v2.5-pro">MiMo V2.5 Pro</option>
+                <option value="mimo-v2.5">MiMo V2.5</option>
+                <option value="deepseek-chat">DeepSeek Chat</option>
+                <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+                <option value="gpt-4o">GPT-4o</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <label for="task">输入任务</label>
+            <textarea id="task" placeholder="描述你想要 AI Agent 完成的任务..."></textarea>
+            <button id="runBtn" onclick="runWorkflow()">执行工作流</button>
+        </div>
+
+        <div class="card" id="resultCard" style="display:none;">
+            <label>执行结果</label>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function runWorkflow() {
+            const btn = document.getElementById('runBtn');
+            const task = document.getElementById('task').value.trim();
+            if (!task) { alert('请输入任务'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Agent 执行中...';
+            document.getElementById('resultCard').style.display = 'block';
+            document.getElementById('result').textContent = 'Planner 正在分析任务...';
+
+            try {
+                const resp = await fetch('/api/workflow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task: task,
+                        model: document.getElementById('model').value,
+                    }),
+                });
+                const data = await resp.json();
+                renderResult(data);
+            } catch (e) {
+                document.getElementById('result').textContent = '请求失败: ' + e.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '执行工作流';
+            }
+        }
+
+        function renderResult(data) {
+            let html = `<p>目标: ${data.goal}</p>`;
+            html += `<p>状态: <span class="status status-${data.status}">${data.status}</span> | 总 Token: ${data.total_tokens}</p>`;
+            html += `<p>${data.summary}</p><hr style="border-color:#334155;margin:1rem 0">`;
+            for (const t of data.tasks) {
+                html += `<p><strong>${t.task_id}</strong> <span class="status status-${t.status}">${t.status}</span></p>`;
+                html += `<p style="margin-left:1rem;color:#cbd5e1">${t.result}</p>`;
+                if (t.review) {
+                    html += `<p style="margin-left:1rem;color:#94a3b8">审查: ${t.review.verdict} (${t.review.score}/100) - ${t.review.feedback || ''}</p>`;
+                }
+            }
+            document.getElementById('result').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
